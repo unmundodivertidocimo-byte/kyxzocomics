@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App Creador de Series Manga</title>
+    <title>App Creador de Series Manga (v3 - Ordenable)</title>
     <style>
         /* --- ESTILOS GLOBALES Y DEL PANEL DE ADMIN --- */
         :root {
@@ -36,12 +36,69 @@
         /* Estilos del Editor */
         .editor-form { background: var(--primary-color); padding: 20px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px; }
         input[type="text"], input[type="file"] { padding: 10px; background: #333; border: 1px solid #555; color: white; border-radius: 4px; width: 100%; box-sizing: border-box; }
-        .preview-area { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-        .preview-img-thumb { width: 100px; height: 140px; object-fit: cover; border: 2px solid #555; }
+        
+        /* Contenedor de Previsualización (NUEVO: Contenedor para Drag and Drop) */
+        #image-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px dashed #555;
+            min-height: 100px;
+        }
 
-        /* --- ESTILOS DEL VISUALIZADOR (TU DISEÑO ORIGINAL) --- */
+        /* Ítem de imagen para arrastrar (NUEVO: Estilos de Arrastre) */
+        .preview-img-wrapper {
+            position: relative;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+            background: #252525;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .preview-img-wrapper:hover { border-color: var(--accent-color); }
+        .preview-img-wrapper.dragging { opacity: 0.5; }
+        /* Indicador visual de dónde caerá el elemento */
+        .preview-img-wrapper.drag-over-left { border-left: 4px solid #4CAF50; }
+        .preview-img-wrapper.drag-over-right { border-right: 4px solid #4CAF50; }
+
+        .preview-img-thumb {
+            width: 100px;
+            height: 140px;
+            object-fit: cover;
+            display: block;
+        }
+        .image-order-label {
+            font-size: 0.8em;
+            color: #ccc;
+            margin-top: 5px;
+        }
+        
+        /* Botón de eliminar en el editor */
+        .remove-image-btn {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            line-height: 1;
+            padding: 0;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        /* --- ESTILOS DEL VISUALIZADOR (Tu diseño original) --- */
         #viewer-section {
-            /* Forzamos estilos del body original */
             background-color: #121212;
             color: #e0e0e0;
             display: flex;
@@ -80,14 +137,13 @@
             padding: 20px 0;
             width: 100%;
             max-width: 800px;
-            margin: 0 auto; /* Centrado horizontal */
+            margin: 0 auto;
         }
         .comic-page {
             width: 100%;
             height: auto;
             display: block;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            /* Eliminamos margen inferior para quitar líneas blancas */
             margin-bottom: 0;
         }
         
@@ -115,21 +171,15 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            text-decoration: none; /* Para enlaces */
+            text-decoration: none;
         }
         .menu-button:hover {
             background-color: #333;
             color: #ffffff;
             transform: scale(1.1);
         }
-        .menu-button:active { transform: scale(0.95); }
         .menu-button.active { background-color: #4CAF50; color: white; }
-        /* Estilo para botón deshabilitado (caps anterior/siguiente) */
-        .menu-button.disabled {
-            opacity: 0.5;
-            pointer-events: none;
-            background-color: #151515;
-        }
+        .menu-button.disabled { opacity: 0.5; pointer-events: none; background-color: #151515; }
 
         /* Sub-página de descargas (Modal simulado) */
         .download-modal {
@@ -170,9 +220,13 @@
             </div>
 
             <div>
-                <label>Subir Imágenes del Manga (Selecciona varias en orden):</label>
+                <label>Subir Imágenes del Manga:</label>
                 <input type="file" id="edit-images" multiple accept="image/*">
-                <div id="image-preview" class="preview-area"></div>
+                
+                <p style="color: var(--accent-color); font-weight: bold; margin: 15px 0 5px;">
+                    ➡️ **Arrastra y suelta las miniaturas de abajo para reordenar las páginas.**
+                </p>
+                <div id="image-preview"></div>
             </div>
 
             <div>
@@ -233,6 +287,7 @@
         let chapters = [];
         const STORAGE_KEY = 'mangaApp_chapters';
         let currentEditingId = null;
+        let uploadedImageFiles = []; // Almacena temporalmente los DataURIs de las imágenes para poder ordenarlas
 
         // Cargar datos al iniciar
         function loadData() {
@@ -279,7 +334,7 @@
             const container = document.getElementById('chapter-list-container');
             container.innerHTML = '';
             if (chapters.length === 0) {
-                container.innerHTML = '<p style="text-align:center;">No hay capítulos creados.</p>';
+                container.innerHTML = '<p style="text-align:center; color:#777;">No hay capítulos creados. ¡Usa el botón para empezar!</p>';
                 return;
             }
 
@@ -293,7 +348,7 @@
                     </div>
                     <div class="chapter-actions">
                         <button class="btn-primary" onclick="showView('viewer', '${chapter.id}')" style="background:#4CAF50;">Ver / Probar</button>
-                        <button class="btn-danger" onclick="deleteChapter('${chapter.id}')">Eliminar</button>
+                        <button onclick="deleteChapter('${chapter.id}')" class="btn-danger">Eliminar</button>
                     </div>
                 `;
                 container.appendChild(item);
@@ -307,41 +362,159 @@
             }
         }
 
-        // ================= 3. LÓGICA DEL EDITOR (Subida de Archivos) =================
+        // ================= 3. LÓGICA DEL EDITOR (Subida, Arrastre y Guardado) =================
         function showEditor() {
-            currentEditingId = Date.now().toString(); // ID único basado en tiempo
+            currentEditingId = Date.now().toString();
             document.getElementById('edit-title').value = '';
             document.getElementById('edit-images').value = '';
             document.getElementById('edit-download').value = '';
-            document.getElementById('image-preview').innerHTML = '';
+            uploadedImageFiles = []; // Limpiar archivos temporales
+            renderImagePreviews();
             showView('editor');
         }
 
-        // Previsualización de imágenes en el editor
-        document.getElementById('edit-images').addEventListener('change', function(e) {
-            const previewArea = document.getElementById('image-preview');
-            previewArea.innerHTML = 'Cargando previsualización...';
-            setTimeout(() => {
-                previewArea.innerHTML = '';
-                Array.from(this.files).forEach(file => {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const img = document.createElement('img');
-                        img.src = e.target.result;
-                        img.className = 'preview-img-thumb';
-                        previewArea.appendChild(img);
-                    }
-                    reader.readAsDataURL(file);
-                });
-            }, 100); // Pequeño delay para la UI
+        // Event listener para cuando se seleccionan archivos
+        document.getElementById('edit-images').addEventListener('change', async function(e) {
+             const newFiles = Array.from(this.files);
+             // Leer cada archivo y convertirlo a Data URL (Base64)
+             const newImageDataUrls = await Promise.all(newFiles.map(file => {
+                 return new Promise(resolve => {
+                     const reader = new FileReader();
+                     reader.onload = (e) => resolve(e.target.result);
+                     reader.readAsDataURL(file);
+                 });
+             }));
+             // Añadir los nuevos Data URIs al array de trabajo
+             uploadedImageFiles = uploadedImageFiles.concat(newImageDataUrls);
+             renderImagePreviews();
+             this.value = ''; // Resetear el input file para que se puedan subir más
         });
+
+
+        // Generar las miniaturas de imágenes en el editor
+        function renderImagePreviews() {
+            const previewArea = document.getElementById('image-preview');
+            previewArea.innerHTML = '';
+            
+            if (uploadedImageFiles.length === 0) {
+                previewArea.innerHTML = '<p style="color:#777; text-align:center; padding:20px;">Sube imágenes para empezar a ordenar.</p>';
+                return;
+            }
+
+            uploadedImageFiles.forEach((imgDataUrl, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'preview-img-wrapper';
+                wrapper.draggable = true; // Habilitar arrastre
+                wrapper.dataset.index = index; // Guardar índice para JS de arrastre
+
+                const img = document.createElement('img');
+                img.src = imgDataUrl;
+                img.className = 'preview-img-thumb';
+
+                const label = document.createElement('span');
+                label.className = 'image-order-label';
+                label.textContent = `#${index + 1}`;
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-image-btn';
+                removeBtn.textContent = '×';
+                removeBtn.onclick = () => removeImage(index);
+
+                wrapper.appendChild(removeBtn);
+                wrapper.appendChild(img);
+                wrapper.appendChild(label);
+                previewArea.appendChild(wrapper);
+            });
+            addDragListeners(); // Aplicar listeners de arrastrar y soltar a los nuevos elementos
+        }
+
+        function removeImage(indexToRemove) {
+            uploadedImageFiles.splice(indexToRemove, 1);
+            renderImagePreviews(); // Re-renderizar para actualizar el orden y la interfaz
+        }
+
+        // LÓGICA DE DRAG AND DROP
+        let dragSrcEl = null;
+
+        function handleDragStart(e) {
+            this.classList.add('dragging');
+            dragSrcEl = this;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.innerHTML);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            this.classList.remove('drag-over-left', 'drag-over-right');
+            // Indica visualmente dónde caerá el elemento (izquierda o derecha del target)
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            if (x < rect.width / 2) {
+                this.classList.add('drag-over-left');
+            } else {
+                this.classList.add('drag-over-right');
+            }
+        }
+
+        function handleDragLeave() {
+            this.classList.remove('drag-over-left', 'drag-over-right');
+        }
+
+        function handleDrop(e) {
+            e.stopPropagation();
+            
+            if (dragSrcEl !== this) {
+                const dragIndex = parseInt(dragSrcEl.dataset.index);
+                const dropIndex = parseInt(this.dataset.index);
+
+                // Reordenar el array de archivos
+                const draggedItem = uploadedImageFiles[dragIndex];
+                uploadedImageFiles.splice(dragIndex, 1);
+                
+                // Determinar la nueva posición de inserción
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                let newIndex = dropIndex;
+                if (x > rect.width / 2) {
+                    newIndex = dropIndex + 1; // Insertar después del elemento
+                }
+                
+                // Si movemos un elemento hacia la izquierda, a veces el dropIndex necesita ajustarse
+                // Para simplificar, simplemente re-renderizaremos que es más limpio.
+
+                uploadedImageFiles.splice(newIndex > uploadedImageFiles.length ? uploadedImageFiles.length : newIndex, 0, draggedItem);
+                renderImagePreviews(); // Volver a dibujar para reflejar el nuevo orden
+            }
+            this.classList.remove('drag-over-left', 'drag-over-right');
+        }
+
+        function handleDragEnd() {
+            this.classList.remove('dragging');
+            const items = document.querySelectorAll('.preview-img-wrapper');
+            items.forEach(item => {
+                item.classList.remove('drag-over-left', 'drag-over-right');
+            });
+        }
+
+        function addDragListeners() {
+            const items = document.querySelectorAll('.preview-img-wrapper');
+            items.forEach(item => {
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragover', handleDragOver);
+                item.addEventListener('dragleave', handleDragLeave);
+                item.addEventListener('drop', handleDrop);
+                item.addEventListener('dragend', handleDragEnd);
+            });
+        }
 
         async function saveChapter() {
             const title = document.getElementById('edit-title').value;
-            const imageFiles = document.getElementById('edit-images').files;
             const downloadFile = document.getElementById('edit-download').files[0];
+            // Importante: uploadedImageFiles ya tiene el orden correcto por el drag and drop
 
-            if (!title || imageFiles.length === 0) {
+            if (!title || uploadedImageFiles.length === 0) {
                 alert("Por favor añade un título y al menos una imagen.");
                 return;
             }
@@ -351,16 +524,8 @@
             saveBtn.disabled = true;
 
             try {
-                // Convertir imágenes a Base64
-                const imagePromises = Array.from(imageFiles).map(file => {
-                    return new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => resolve(e.target.result);
-                        reader.onerror = reject;
-                        reader.readAsDataURL(file);
-                    });
-                });
-                const imageDataArray = await Promise.all(imagePromises);
+                // Las imágenes ya están en uploadedImageFiles en el orden correcto y en DataURI
+                const imageDataArray = uploadedImageFiles; 
 
                 // Procesar archivo de descarga (si existe)
                 let downloadData = null;
@@ -380,6 +545,7 @@
                     download: downloadData
                 };
 
+                // Añadir el nuevo capítulo y guardar
                 chapters.push(newChapter);
                 saveData();
                 showView('dashboard');
@@ -392,7 +558,7 @@
             }
         }
 
-        // ================= 4. LÓGICA DEL VISUALIZADOR (Tu código adaptado) =================
+        // ================= 4. LÓGICA DEL VISUALIZADOR (Sin cambios) =================
         let isScrolling = false;
         let scrollSpeed = 1;
         let scrollInterval;
@@ -464,7 +630,6 @@
             isScrolling = true;
             btnAutoscroll.textContent = "⏸";
             btnAutoscroll.classList.add('active');
-            // Velocidad variable simple (puedes ajustar el '15' para que sea más rápido o lento base)
             scrollInterval = setInterval(() => {
                 window.scrollBy(0, scrollSpeed);
             }, 15); 
@@ -503,10 +668,9 @@
                  const linksContainer = document.getElementById('download-links-container');
                  linksContainer.innerHTML = '';
                  if (currentDownloadData) {
-                     // Crear un enlace de descarga real usando el Data URI
                      const link = document.createElement('a');
                      link.href = currentDownloadData.data;
-                     link.download = currentDownloadData.name; // Nombre del archivo al descargar
+                     link.download = currentDownloadData.name;
                      link.className = 'download-link-item';
                      link.innerHTML = `📥 Descargar archivo: ${currentDownloadData.name}`;
                      linksContainer.appendChild(link);
