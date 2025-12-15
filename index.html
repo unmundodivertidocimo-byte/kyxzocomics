@@ -3,935 +3,526 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📚 Biblioteca de Cómics y Mangas</title>
+    <title>App Creador de Series Manga</title>
     <style>
-        /* Estilos CSS */
-        * {
+        /* --- ESTILOS GLOBALES Y DEL PANEL DE ADMIN --- */
+        :root {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --primary-color: #1e1e1e;
+            --accent-color: #BB86FC;
+            --danger-color: #cf6679;
+        }
+        body {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: Arial, sans-serif;
         }
+        .app-container { padding: 20px; max-width: 1000px; margin: 0 auto; }
+        h1, h2 { text-align: center; color: var(--accent-color); }
+        button { cursor: pointer; padding: 10px 20px; border: none; border-radius: 5px; font-size: 16px; transition: 0.3s; }
+        .btn-primary { background-color: var(--accent-color); color: black; font-weight: bold; }
+        .btn-primary:hover { background-color: #9955dd; }
+        .btn-danger { background-color: var(--danger-color); color: black; }
+        .hidden { display: none !important; }
 
-        body {
-            background-color: #212121;
-            color: #EAEAEA;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
+        /* Estilos del Dashboard */
+        .chapter-list { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        .chapter-item { background: var(--primary-color); padding: 15px; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; }
+        .chapter-actions { display: flex; gap: 10px; }
+
+        /* Estilos del Editor */
+        .editor-form { background: var(--primary-color); padding: 20px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px; }
+        input[type="text"], input[type="file"] { padding: 10px; background: #333; border: 1px solid #555; color: white; border-radius: 4px; width: 100%; box-sizing: border-box; }
+        .preview-area { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .preview-img-thumb { width: 100px; height: 140px; object-fit: cover; border: 2px solid #555; }
+
+        /* --- ESTILOS DEL VISUALIZADOR (TU DISEÑO ORIGINAL) --- */
+        #viewer-section {
+            /* Forzamos estilos del body original */
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
             min-height: 100vh;
         }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        /* Header */
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem 0;
-            text-align: center;
-            margin-bottom: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-        }
-
-        /* Navigation */
-        .nav {
-            background: #333;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 2rem;
+        .top-bar {
+            background-color: #1f1f1f;
+            padding: 15px 20px;
             display: flex;
-            justify-content: center;
-            gap: 1rem;
-            flex-wrap: wrap;
+            align-items: center;
+            border-bottom: 2px solid #333;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
-
-        .nav-btn {
-            background: #4CAF50;
-            color: white;
-            padding: 12px 24px;
+        .back-button {
             text-decoration: none;
-            border-radius: 6px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            color: #e0e0e0;
+            font-size: 24px;
+            margin-right: 20px;
+            padding: 5px 10px;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
         }
-
-        .nav-btn:hover {
-            background: #45a049;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
-        }
-
-        .nav-btn.admin {
-            background: #2196F3;
-        }
-
-        .nav-btn.admin:hover {
-            background: #1976D2;
-        }
-
-        /* Series Section */
-        .series-section {
-            margin-bottom: 3rem;
-        }
-
-        .series-title {
-            font-size: 2rem;
-            color: #FFC107;
-            border-bottom: 3px solid #FFC107;
-            padding-bottom: 10px;
-            margin-bottom: 1.5rem;
-            display: inline-block;
-        }
-
-        .series-description {
-            color: #BBB;
-            margin-bottom: 1.5rem;
-            font-size: 1.1rem;
-        }
-
-        /* Chapters Grid */
-        .chapters-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .chapter-card {
-            background: #333;
-            border-radius: 8px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-        }
-
-        .chapter-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-            border-color: #4CAF50;
-        }
-
-        .chapter-link {
-            display: block;
-            padding: 1.5rem;
-            color: #EAEAEA;
-            text-decoration: none;
-            height: 100%;
-            position: relative;
-        }
-
-        .chapter-number {
-            font-size: 0.9rem;
-            color: #4CAF50;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-        }
-
-        .chapter-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-        }
-
-        .chapter-meta {
+        .back-button:hover { background-color: #333; color: #ffffff; }
+        .chapter-title { font-size: 20px; font-weight: bold; color: #ffffff; margin: 0; }
+        
+        /* Contenedor principal de imágenes */
+        .comic-container {
+            flex: 1;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            margin-top: 1rem;
+            padding: 20px 0;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto; /* Centrado horizontal */
         }
-
-        .chapter-date {
-            font-size: 0.8rem;
-            color: #999;
-        }
-
-        .chapter-badge {
-            background: #FF5722;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: bold;
-        }
-
-        /* Chapter Viewer */
-        .chapter-viewer {
-            display: none;
-            background: #1a1a1a;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        .chapter-viewer.active {
-            display: block;
-        }
-
-        .viewer-header {
-            background: #333;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #444;
-        }
-
-        .viewer-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-        }
-
-        .viewer-controls {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .control-btn {
-            background: #555;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-        }
-
-        .control-btn:hover {
-            background: #666;
-        }
-
-        .control-btn.active {
-            background: #4CAF50;
-        }
-
-        .viewer-content {
-            padding: 2rem;
-            text-align: center;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .manga-page {
-            max-width: 100%;
+        .comic-page {
+            width: 100%;
             height: auto;
-            margin-bottom: 1rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: block;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            /* Eliminamos margen inferior para quitar líneas blancas */
+            margin-bottom: 0;
         }
-
-        /* Floating Menu */
+        
+        /* Menú Flotante */
         .floating-menu {
             position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #333;
-            padding: 1rem;
-            border-radius: 12px;
-            display: none;
-            z-index: 1000;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
-            border: 2px solid #4CAF50;
-        }
-
-        .floating-menu.active {
+            bottom: 30px;
+            right: 30px;
             display: flex;
-            gap: 0.5rem;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 200;
         }
-
-        .menu-btn {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-            white-space: nowrap;
-        }
-
-        .menu-btn:hover {
-            background: #45a049;
-        }
-
-        .menu-btn.secondary {
-            background: #2196F3;
-        }
-
-        .menu-btn.secondary:hover {
-            background: #1976D2;
-        }
-
-        /* Speed Control */
-        .speed-control {
-            position: fixed;
-            top: 50%;
-            right: 20px;
-            transform: translateY(-50%);
-            background: #333;
-            padding: 1rem;
-            border-radius: 8px;
-            display: none;
-            z-index: 1001;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        }
-
-        .speed-control.active {
-            display: block;
-        }
-
-        .speed-slider {
-            width: 150px;
-            margin: 10px 0;
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            background: #333;
-            border-radius: 12px;
-            color: #999;
-        }
-
-        .empty-state h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: #EAEAEA;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .chapters-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .viewer-controls {
-                flex-wrap: wrap;
-                gap: 0.5rem;
-            }
-
-            .floating-menu {
-                flex-wrap: wrap;
-                justify-content: center;
-                bottom: 10px;
-                left: 10px;
-                right: 10px;
-                transform: none;
-            }
-
-            .speed-control {
-                right: 10px;
-            }
-        }
-
-        /* Loading */
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: #999;
-        }
-
-        .spinner {
-            border: 4px solid #333;
-            border-top: 4px solid #4CAF50;
+        .menu-button {
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
+            border: none;
+            background-color: #1f1f1f;
+            color: #e0e0e0;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-decoration: none; /* Para enlaces */
+        }
+        .menu-button:hover {
+            background-color: #333;
+            color: #ffffff;
+            transform: scale(1.1);
+        }
+        .menu-button:active { transform: scale(0.95); }
+        .menu-button.active { background-color: #4CAF50; color: white; }
+        /* Estilo para botón deshabilitado (caps anterior/siguiente) */
+        .menu-button.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            background-color: #151515;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        /* Sub-página de descargas (Modal simulado) */
+        .download-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 300;
+            display: flex; justify-content: center; align-items: center;
         }
+        .download-content {
+            background: var(--primary-color); padding: 30px; border-radius: 10px; width: 80%; max-width: 500px; text-align: center;
+            position: relative;
+        }
+        .close-modal { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; }
+        .download-link-item {
+            display: block; background: #333; padding: 15px; margin: 10px 0; border-radius: 5px; text-decoration: none; color: var(--accent-color); font-weight: bold;
+        }
+        .download-link-item:hover { background: #444; }
+
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <h1>📚 Biblioteca de Cómics y Mangas</h1>
-            <p>Explora tus series favoritas</p>
-        </header>
 
-        <!-- Navigation -->
-        <nav class="nav">
-            <a href="#" class="nav-btn" onclick="showHome()">
-                🏠 Inicio
-            </a>
-            <a href="#" class="nav-btn admin" onclick="showAdmin()">
-                ⚙️ Panel de Administración
-            </a>
-        </nav>
-
-        <!-- Main Content -->
-        <div id="main-content">
-            <!-- Home View -->
-            <div id="home-view">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Cargando series...</p>
-                </div>
-            </div>
-
-            <!-- Admin View -->
-            <div id="admin-view" style="display: none;">
-                <div class="series-section">
-                    <h2 class="series-title">➕ Crear Nueva Serie</h2>
-                    <div style="background: #333; padding: 2rem; border-radius: 8px; margin-bottom: 2rem;">
-                        <div style="margin-bottom: 1rem;">
-                            <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Título de la Serie:</label>
-                            <input type="text" id="series-title" placeholder="Ej: Tengo una Mansión en un Mundo Post Apocalíptico" 
-                                   style="width: 100%; padding: 12px; border: none; border-radius: 6px; background: #444; color: white; font-size: 1rem;">
-                        </div>
-                        <div style="margin-bottom: 1rem;">
-                            <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Descripción:</label>
-                            <textarea id="series-description" placeholder="Descripción de la serie..." 
-                                      style="width: 100%; padding: 12px; border: none; border-radius: 6px; background: #444; color: white; font-size: 1rem; min-height: 100px; resize: vertical;"></textarea>
-                        </div>
-                        <button onclick="createSeries()" style="background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer;">
-                            ➕ Crear Serie
-                        </button>
-                    </div>
-                </div>
-
-                <div class="series-section">
-                    <h2 class="series-title">📚 Series Existentes</h2>
-                    <div id="admin-series-list">
-                        <div class="loading">
-                            <div class="spinner"></div>
-                            <p>Cargando series...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Chapter Viewer -->
-            <div id="chapter-viewer" class="chapter-viewer">
-                <div class="viewer-header">
-                    <div class="viewer-title" id="viewer-title">Capítulo</div>
-                    <div class="viewer-controls">
-                        <button class="control-btn" onclick="toggleAutoScroll()" id="autoscroll-btn">▶️ Auto-Scroll</button>
-                        <button class="control-btn" onclick="toggleSpeedControl()" id="speed-btn">⚡ Velocidad</button>
-                        <button class="control-btn" onclick="toggleMenu()" id="menu-btn">📋 Menú</button>
-                        <button class="control-btn" onclick="showHome()">🏠 Inicio</button>
-                    </div>
-                </div>
-                <div class="viewer-content" id="viewer-content">
-                    <!-- Chapter images will be loaded here -->
-                </div>
-            </div>
+    <div id="dashboard-section" class="app-container">
+        <h1>Administrador de Series</h1>
+        <div style="text-align: center; margin-bottom: 30px;">
+            <button class="btn-primary" onclick="showEditor()">+ Crear Nuevo Capítulo</button>
+            <p style="font-size: 0.8em; color: #999;">(Nota: Usa imágenes ligeras, el almacenamiento del navegador es limitado)</p>
         </div>
+        <div id="chapter-list-container" class="chapter-list">
+            </div>
+    </div>
 
-        <!-- Floating Menu -->
-        <div class="floating-menu" id="floating-menu">
-            <button class="menu-btn" onclick="previousChapter()">⬅️ Anterior</button>
-            <button class="menu-btn" onclick="toggleAutoScroll()" id="float-autoscroll-btn">▶️ Auto-Scroll</button>
-            <button class="menu-btn secondary" onclick="toggleSpeedControl()" id="float-speed-btn">⚡ Velocidad</button>
-            <button class="menu-btn secondary" onclick="nextChapter()">Siguiente ➡️</button>
-        </div>
+    <div id="editor-section" class="app-container hidden">
+        <h2>Editor de Capítulo</h2>
+        <div class="editor-form">
+            <div>
+                <label>Nombre del Capítulo:</label>
+                <input type="text" id="edit-title" placeholder="Ej: Capítulo 1: El Comienzo">
+            </div>
 
-        <!-- Speed Control -->
-        <div class="speed-control" id="speed-control">
-            <h4 style="margin-bottom: 1rem; color: white;">⚡ Control de Velocidad</h4>
-            <input type="range" class="speed-slider" id="speed-slider" min="1" max="10" value="3">
-            <div style="color: #999; font-size: 0.9rem; margin-top: 0.5rem;">
-                Velocidad: <span id="speed-value">3</span>
+            <div>
+                <label>Subir Imágenes del Manga (Selecciona varias en orden):</label>
+                <input type="file" id="edit-images" multiple accept="image/*">
+                <div id="image-preview" class="preview-area"></div>
+            </div>
+
+            <div>
+                <label>Subir Archivo de Descarga (Ej: .zip, .pdf - Opcional):</label>
+                 <input type="file" id="edit-download" accept=".zip,.rar,.pdf,.cbz">
+                 <p style="font-size: 0.8em; color: #aaa;">Solo se permite 1 archivo de descarga por capítulo en esta versión.</p>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn-primary" style="flex: 2;" onclick="saveChapter()">Guardar Capítulo</button>
+                <button class="btn-danger" style="flex: 1;" onclick="showView('dashboard')">Cancelar</button>
             </div>
         </div>
     </div>
 
+    <div id="viewer-section" class="hidden">
+         <div class="top-bar">
+            <a href="#" onclick="showView('dashboard'); return false;" class="back-button">←</a>
+            <h1 id="viewer-chapter-title" class="chapter-title">Cargando capítulo...</h1>
+        </div>
+
+        <main id="comic-pages-container" class="comic-container">
+            </main>
+
+        <nav class="floating-menu">
+            <a href="#" id="btn-prev-cap" class="menu-button disabled" title="Capítulo Anterior">
+                ⏮
+            </a>
+             <button id="btn-download" class="menu-button" title="Descargas">
+                ⬇️
+            </button>
+            <button id="btn-autoscroll" class="menu-button" title="Activar Autoscroll">
+                ▶️
+            </button>
+            <a href="#" id="btn-next-cap" class="menu-button disabled" title="Siguiente Capítulo">
+                ⏭
+            </a>
+        </nav>
+
+        <div id="download-modal" class="download-modal hidden">
+            <div class="download-content">
+                <span class="close-modal" onclick="toggleDownloadModal(false)">×</span>
+                <h3>Descargas del Capítulo</h3>
+                <div id="download-links-container">
+                    <p>No hay descargas disponibles para este capítulo.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <script>
-        // Data Storage
-        let seriesData = [];
-        let currentChapter = null;
-        let currentChapterIndex = 0;
-        let autoScrollInterval = null;
-        let scrollSpeed = 3;
+        // ====================================================================
+        // LÓGICA DE LA APLICACIÓN (JAVASCRIPT)
+        // ====================================================================
 
-        // Initialize with sample data
-        function initializeApp() {
-            // Sample data - you can modify this
-            seriesData = [
-                {
-                    id: 1,
-                    title: "Tengo una Mansión en un Mundo Post Apocalíptico",
-                    description: "Una historia de supervivencia y aventura en un mundo devastado donde el protagonista encuentra una misteriosa mansión que podría cambiar su destino.",
-                    slug: "mansion-post-apocaliptico",
-                    chapters: [
-                        {
-                            id: 1,
-                            title: "El Comienzo del Fin",
-                            slug: "001-el-comienzo-del-fin",
-                            chapterNumber: 1,
-                            images: [
-                                "https://i.imgur.com/uR1l3gL.jpg",
-                                "https://i.imgur.com/example2.jpg",
-                                "https://i.imgur.com/example3.jpg"
-                            ],
-                            isPublished: true,
-                            createdAt: "2025-12-15"
-                        },
-                        {
-                            id: 2,
-                            title: "Los Misterios de la Mansión",
-                            slug: "002-los-misterios-de-la-mansion",
-                            chapterNumber: 2,
-                            images: [
-                                "https://i.imgur.com/example4.jpg",
-                                "https://i.imgur.com/example5.jpg"
-                            ],
-                            isPublished: true,
-                            createdAt: "2025-12-15"
-                        },
-                        {
-                            id: 3,
-                            title: "Secretos Revelados",
-                            slug: "003-secretos-revelados",
-                            chapterNumber: 3,
-                            images: [
-                                "https://i.imgur.com/example6.jpg",
-                                "https://i.imgur.com/example7.jpg"
-                            ],
-                            isPublished: true,
-                            createdAt: "2025-12-15"
-                        }
-                    ]
-                },
-                {
-                    id: 2,
-                    title: "Emperador Mágico",
-                    description: "La historia de un joven emperador que descubre sus poderes mágicos y debe proteger su reino.",
-                    slug: "emperador-magico",
-                    chapters: [
-                        {
-                            id: 4,
-                            title: "Capítulos 1-3",
-                            slug: "emperador-capitulo-1-3",
-                            chapterNumber: 1,
-                            images: [
-                                "https://i.imgur.com/magic1.jpg",
-                                "https://i.imgur.com/magic2.jpg"
-                            ],
-                            isPublished: true,
-                            createdAt: "2025-12-15"
-                        }
-                    ]
-                },
-                {
-                    id: 3,
-                    title: "Matón a Cargo",
-                    description: "Las aventuras de un matón que descubre que hay más poder en ser amable que en ser temido.",
-                    slug: "maton-a-cargo",
-                    chapters: [
-                        {
-                            id: 5,
-                            title: "El Primer Día",
-                            slug: "maton-primer-dia",
-                            chapterNumber: 1,
-                            images: [
-                                "https://i.imgur.com/bully1.jpg"
-                            ],
-                            isPublished: true,
-                            createdAt: "2025-12-15"
-                        }
-                    ]
-                }
-            ];
+        // 1. ESTADO GLOBAL Y UTILIDADES
+        let chapters = [];
+        const STORAGE_KEY = 'mangaApp_chapters';
+        let currentEditingId = null;
 
-            // Load from localStorage if available
-            const savedData = localStorage.getItem('mangaLibraryData');
-            if (savedData) {
-                try {
-                    seriesData = JSON.parse(savedData);
-                } catch (e) {
-                    console.error('Error loading saved data:', e);
-                }
-            }
-
-            showHome();
-        }
-
-        // View Management
-        function showHome() {
-            hideAllViews();
-            document.getElementById('home-view').style.display = 'block';
-            renderHome();
-        }
-
-        function showAdmin() {
-            hideAllViews();
-            document.getElementById('admin-view').style.display = 'block';
-            renderAdmin();
-        }
-
-        function hideAllViews() {
-            document.getElementById('home-view').style.display = 'none';
-            document.getElementById('admin-view').style.display = 'none';
-            document.getElementById('chapter-viewer').classList.remove('active');
-            document.getElementById('floating-menu').classList.remove('active');
-            document.getElementById('speed-control').classList.remove('active');
-            stopAutoScroll();
-        }
-
-        // Render Functions
-        function renderHome() {
-            const homeView = document.getElementById('home-view');
-            
-            if (seriesData.length === 0) {
-                homeView.innerHTML = `
-                    <div class="empty-state">
-                        <h3>📚 No hay series disponibles</h3>
-                        <p>Comienza creando tu primera serie en el panel de administración</p>
-                        <button class="nav-btn admin" onclick="showAdmin()" style="margin-top: 1rem;">
-                            ⚙️ Ir al Panel de Administración
-                        </button>
-                    </div>
-                `;
-                return;
-            }
-
-            let html = '';
-            seriesData.forEach(series => {
-                const publishedChapters = series.chapters.filter(ch => ch.isPublished);
-                
-                html += `
-                    <div class="series-section">
-                        <h2 class="series-title">${series.title.toUpperCase()}</h2>
-                        ${series.description ? `<p class="series-description">${series.description}</p>` : ''}
-                        
-                        ${publishedChapters.length > 0 ? `
-                            <div class="chapters-grid">
-                                ${publishedChapters
-                                    .sort((a, b) => b.chapterNumber - a.chapterNumber)
-                                    .map((chapter, index) => `
-                                        <div class="chapter-card">
-                                            <a href="#" onclick="openChapter(${series.id}, ${chapter.id})" class="chapter-link">
-                                                <div class="chapter-number">Capítulo ${chapter.chapterNumber}</div>
-                                                <div class="chapter-title">${chapter.title}</div>
-                                                <div class="chapter-meta">
-                                                    <span class="chapter-date">${chapter.createdAt}</span>
-                                                    ${index === 0 ? '<span class="chapter-badge">NUEVO</span>' : ''}
-                                                </div>
-                                            </a>
-                                        </div>
-                                    `).join('')}
-                            </div>
-                        ` : `
-                            <div class="empty-state">
-                                <h3>No hay capítulos publicados</h3>
-                                <p>Esta serie aún no tiene capítulos disponibles</p>
-                            </div>
-                        `}
-                    </div>
-                `;
-            });
-
-            homeView.innerHTML = html;
-        }
-
-        function renderAdmin() {
-            const adminSeriesList = document.getElementById('admin-series-list');
-            
-            if (seriesData.length === 0) {
-                adminSeriesList.innerHTML = `
-                    <div class="empty-state">
-                        <h3>No hay series creadas</h3>
-                        <p>Usa el formulario superior para crear tu primera serie</p>
-                    </div>
-                `;
-                return;
-            }
-
-            let html = '';
-            seriesData.forEach(series => {
-                html += `
-                    <div class="chapter-card" style="margin-bottom: 1rem;">
-                        <div style="padding: 1.5rem;">
-                            <h3 style="color: #4CAF50; margin-bottom: 0.5rem;">${series.title}</h3>
-                            <p style="color: #BBB; margin-bottom: 1rem;">${series.description || 'Sin descripción'}</p>
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="color: #999;">${series.chapters.length} capítulos</span>
-                                <div>
-                                    <button class="control-btn" onclick="editSeries(${series.id})" style="margin-right: 0.5rem;">✏️ Editar</button>
-                                    <button class="control-btn" onclick="deleteSeries(${series.id})" style="background: #f44336;">🗑️ Eliminar</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            adminSeriesList.innerHTML = html;
-        }
-
-        // Chapter Management
-        function openChapter(seriesId, chapterId) {
-            const series = seriesData.find(s => s.id === seriesId);
-            const chapter = series.chapters.find(c => c.id === chapterId);
-            
-            if (!chapter || !chapter.images || chapter.images.length === 0) {
-                alert('Este capítulo no tiene imágenes disponibles');
-                return;
-            }
-
-            currentChapter = chapter;
-            currentChapterIndex = series.chapters.findIndex(c => c.id === chapterId);
-            
-            hideAllViews();
-            document.getElementById('chapter-viewer').classList.add('active');
-            document.getElementById('viewer-title').textContent = `${series.title} - ${chapter.title}`;
-            
-            renderChapter(chapter);
-        }
-
-        function renderChapter(chapter) {
-            const viewerContent = document.getElementById('viewer-content');
-            
-            let html = '';
-            chapter.images.forEach((imageUrl, index) => {
-                html += `
-                    <img src="${imageUrl}" 
-                         alt="Página ${index + 1}" 
-                         class="manga-page"
-                         onload="this.style.opacity='1'"
-                         style="opacity: 0; transition: opacity 0.3s ease;">
-                `;
-            });
-
-            viewerContent.innerHTML = html;
-        }
-
-        // Navigation
-        function previousChapter() {
-            // Find current series and chapter
-            for (let series of seriesData) {
-                const chapterIndex = series.chapters.findIndex(c => c.id === currentChapter.id);
-                if (chapterIndex !== -1 && chapterIndex > 0) {
-                    const prevChapter = series.chapters[chapterIndex - 1];
-                    if (prevChapter.isPublished) {
-                        openChapter(series.id, prevChapter.id);
-                        return;
-                    }
-                }
-            }
-            alert('No hay capítulo anterior');
-        }
-
-        function nextChapter() {
-            // Find current series and chapter
-            for (let series of seriesData) {
-                const chapterIndex = series.chapters.findIndex(c => c.id === currentChapter.id);
-                if (chapterIndex !== -1 && chapterIndex < series.chapters.length - 1) {
-                    const nextChapter = series.chapters[chapterIndex + 1];
-                    if (nextChapter.isPublished) {
-                        openChapter(series.id, nextChapter.id);
-                        return;
-                    }
-                }
-            }
-            alert('No hay capítulo siguiente');
-        }
-
-        // Auto-scroll Controls
-        function toggleAutoScroll() {
-            const btn = document.getElementById('autoscroll-btn');
-            const floatBtn = document.getElementById('float-autoscroll-btn');
-            
-            if (autoScrollInterval) {
-                stopAutoScroll();
-                btn.textContent = '▶️ Auto-Scroll';
-                btn.classList.remove('active');
-                if (floatBtn) floatBtn.textContent = '▶️ Auto-Scroll';
+        // Cargar datos al iniciar
+        function loadData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (data) {
+                chapters = JSON.parse(data);
             } else {
-                startAutoScroll();
-                btn.textContent = '⏸️ Detener';
-                btn.classList.add('active');
-                if (floatBtn) floatBtn.textContent = '⏸️ Detener';
+                chapters = [];
             }
+            renderDashboard();
         }
 
-        function startAutoScroll() {
-            const viewerContent = document.getElementById('viewer-content');
-            autoScrollInterval = setInterval(() => {
-                viewerContent.scrollBy({
-                    top: scrollSpeed,
-                    behavior: 'smooth'
-                });
-            }, 50);
-        }
-
-        function stopAutoScroll() {
-            if (autoScrollInterval) {
-                clearInterval(autoScrollInterval);
-                autoScrollInterval = null;
-            }
-        }
-
-        // Speed Control
-        function toggleSpeedControl() {
-            const speedControl = document.getElementById('speed-control');
-            speedControl.classList.toggle('active');
-        }
-
-        function updateSpeed(value) {
-            scrollSpeed = parseInt(value);
-            document.getElementById('speed-value').textContent = value;
-            
-            // Restart auto-scroll if it was active
-            if (autoScrollInterval) {
-                stopAutoScroll();
-                startAutoScroll();
-            }
-        }
-
-        // Menu Controls
-        function toggleMenu() {
-            const menu = document.getElementById('floating-menu');
-            menu.classList.toggle('active');
-        }
-
-        // Series Management
-        function createSeries() {
-            const title = document.getElementById('series-title').value.trim();
-            const description = document.getElementById('series-description').value.trim();
-            
-            if (!title) {
-                alert('Por favor, ingresa un título para la serie');
-                return;
-            }
-
-            const newSeries = {
-                id: Date.now(),
-                title: title,
-                description: description,
-                slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-                chapters: []
-            };
-
-            seriesData.push(newSeries);
-            saveData();
-            
-            // Clear form
-            document.getElementById('series-title').value = '';
-            document.getElementById('series-description').value = '';
-            
-            alert('Serie creada exitosamente');
-            renderAdmin();
-        }
-
-        function editSeries(seriesId) {
-            const series = seriesData.find(s => s.id === seriesId);
-            if (!series) return;
-            
-            const newTitle = prompt('Editar título de la serie:', series.title);
-            if (newTitle && newTitle.trim()) {
-                series.title = newTitle.trim();
-                saveData();
-                renderAdmin();
-            }
-        }
-
-        function deleteSeries(seriesId) {
-            if (!confirm('¿Estás seguro de que quieres eliminar esta serie? Esta acción no se puede deshacer.')) {
-                return;
-            }
-            
-            const index = seriesData.findIndex(s => s.id === seriesId);
-            if (index !== -1) {
-                seriesData.splice(index, 1);
-                saveData();
-                renderAdmin();
-            }
-        }
-
-        // Data Persistence
+        // Guardar datos
         function saveData() {
             try {
-                localStorage.setItem('mangaLibraryData', JSON.stringify(seriesData));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(chapters));
+                renderDashboard();
             } catch (e) {
-                console.error('Error saving data:', e);
-                alert('Error al guardar los datos. El almacenamiento local podría estar lleno.');
+                alert("Error: El almacenamiento del navegador está lleno. Intenta usar imágenes más pequeñas o borra capítulos antiguos.");
+                console.error(e);
             }
         }
 
-        // Event Listeners
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeApp();
-            
-            // Speed slider
-            const speedSlider = document.getElementById('speed-slider');
-            if (speedSlider) {
-                speedSlider.addEventListener('input', function() {
-                    updateSpeed(this.value);
-                });
+        // Router simple (Cambiar entre Dashboard, Editor y Visualizador)
+        function showView(viewName, chapterId = null) {
+            document.getElementById('dashboard-section').classList.add('hidden');
+            document.getElementById('editor-section').classList.add('hidden');
+            document.getElementById('viewer-section').classList.add('hidden');
+            stopAutoscroll(); // Detener autoscroll si cambiamos de vista
+
+            if (viewName === 'dashboard') {
+                document.getElementById('dashboard-section').classList.remove('hidden');
+                renderDashboard();
+            } else if (viewName === 'editor') {
+                document.getElementById('editor-section').classList.remove('hidden');
+            } else if (viewName === 'viewer') {
+                document.getElementById('viewer-section').classList.remove('hidden');
+                loadChapterIntoViewer(chapterId);
             }
-            
-            // Keyboard shortcuts
-            document.addEventListener('keydown', function(e) {
-                if (!currentChapter) return;
-                
-                switch(e.key) {
-                    case 'ArrowLeft':
-                        previousChapter();
-                        break;
-                    case 'ArrowRight':
-                        nextChapter();
-                        break;
-                    case ' ':
-                        e.preventDefault();
-                        toggleAutoScroll();
-                        break;
-                    case 'Escape':
-                        showHome();
-                        break;
-                }
+        }
+
+        // ================= 2. LÓGICA DEL DASHBOARD =================
+        function renderDashboard() {
+            const container = document.getElementById('chapter-list-container');
+            container.innerHTML = '';
+            if (chapters.length === 0) {
+                container.innerHTML = '<p style="text-align:center;">No hay capítulos creados.</p>';
+                return;
+            }
+
+            chapters.forEach((chapter, index) => {
+                const item = document.createElement('div');
+                item.className = 'chapter-item';
+                item.innerHTML = `
+                    <div>
+                        <strong>#${index + 1}</strong> - ${chapter.title} 
+                        <span style="font-size:0.8em">(${chapter.images.length} imágenes)</span>
+                    </div>
+                    <div class="chapter-actions">
+                        <button class="btn-primary" onclick="showView('viewer', '${chapter.id}')" style="background:#4CAF50;">Ver / Probar</button>
+                        <button class="btn-danger" onclick="deleteChapter('${chapter.id}')">Eliminar</button>
+                    </div>
+                `;
+                container.appendChild(item);
             });
+        }
+
+        function deleteChapter(id) {
+            if(confirm('¿Seguro que quieres eliminar este capítulo?')) {
+                chapters = chapters.filter(c => c.id !== id);
+                saveData();
+            }
+        }
+
+        // ================= 3. LÓGICA DEL EDITOR (Subida de Archivos) =================
+        function showEditor() {
+            currentEditingId = Date.now().toString(); // ID único basado en tiempo
+            document.getElementById('edit-title').value = '';
+            document.getElementById('edit-images').value = '';
+            document.getElementById('edit-download').value = '';
+            document.getElementById('image-preview').innerHTML = '';
+            showView('editor');
+        }
+
+        // Previsualización de imágenes en el editor
+        document.getElementById('edit-images').addEventListener('change', function(e) {
+            const previewArea = document.getElementById('image-preview');
+            previewArea.innerHTML = 'Cargando previsualización...';
+            setTimeout(() => {
+                previewArea.innerHTML = '';
+                Array.from(this.files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'preview-img-thumb';
+                        previewArea.appendChild(img);
+                    }
+                    reader.readAsDataURL(file);
+                });
+            }, 100); // Pequeño delay para la UI
         });
 
-        // Show floating menu when viewing chapter
-        document.addEventListener('scroll', function() {
-            const viewer = document.getElementById('chapter-viewer');
-            const menu = document.getElementById('floating-menu');
+        async function saveChapter() {
+            const title = document.getElementById('edit-title').value;
+            const imageFiles = document.getElementById('edit-images').files;
+            const downloadFile = document.getElementById('edit-download').files[0];
+
+            if (!title || imageFiles.length === 0) {
+                alert("Por favor añade un título y al menos una imagen.");
+                return;
+            }
+
+            const saveBtn = document.querySelector('#editor-section .btn-primary');
+            saveBtn.textContent = 'Procesando y Guardando... (Espera)';
+            saveBtn.disabled = true;
+
+            try {
+                // Convertir imágenes a Base64
+                const imagePromises = Array.from(imageFiles).map(file => {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+                });
+                const imageDataArray = await Promise.all(imagePromises);
+
+                // Procesar archivo de descarga (si existe)
+                let downloadData = null;
+                if (downloadFile) {
+                     downloadData = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve({ name: downloadFile.name, data: e.target.result });
+                        reader.onerror = reject;
+                        reader.readAsDataURL(downloadFile);
+                    });
+                }
+
+                const newChapter = {
+                    id: currentEditingId,
+                    title: title,
+                    images: imageDataArray,
+                    download: downloadData
+                };
+
+                chapters.push(newChapter);
+                saveData();
+                showView('dashboard');
+
+            } catch (error) {
+                alert("Error al procesar los archivos. " + error);
+            } finally {
+                saveBtn.textContent = 'Guardar Capítulo';
+                saveBtn.disabled = false;
+            }
+        }
+
+        // ================= 4. LÓGICA DEL VISUALIZADOR (Tu código adaptado) =================
+        let isScrolling = false;
+        let scrollSpeed = 1;
+        let scrollInterval;
+        const btnAutoscroll = document.getElementById('btn-autoscroll');
+        const btnDownload = document.getElementById('btn-download');
+        const modalDownload = document.getElementById('download-modal');
+        let currentDownloadData = null;
+
+        function loadChapterIntoViewer(id) {
+            const chapterIndex = chapters.findIndex(c => c.id === id);
+            const chapterData = chapters[chapterIndex];
+            if (!chapterData) return;
+
+            // 1. Poner Título y Resetear Scroll
+            document.getElementById('viewer-chapter-title').textContent = chapterData.title;
+            window.scrollTo(0, 0);
+
+            // 2. Inyectar Imágenes
+            const container = document.getElementById('comic-pages-container');
+            container.innerHTML = '';
+            chapterData.images.forEach(imgData => {
+                const img = document.createElement('img');
+                img.src = imgData;
+                img.className = 'comic-page';
+                container.appendChild(img);
+            });
+
+            // 3. Configurar Navegación Inteligente (Lista Enlazada)
+            const prevBtn = document.getElementById('btn-prev-cap');
+            const nextBtn = document.getElementById('btn-next-cap');
             
-            if (viewer && viewer.classList.contains('active')) {
-                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                if (scrollTop > 200) {
-                    menu.classList.add('active');
-                } else {
-                    menu.classList.remove('active');
+            // Lógica para botón ANTERIOR
+            if (chapterIndex > 0) {
+                const prevChapterId = chapters[chapterIndex - 1].id;
+                prevBtn.classList.remove('disabled');
+                prevBtn.onclick = (e) => { e.preventDefault(); showView('viewer', prevChapterId); };
+            } else {
+                prevBtn.classList.add('disabled');
+                prevBtn.onclick = (e) => e.preventDefault();
+            }
+
+            // Lógica para botón SIGUIENTE
+            if (chapterIndex < chapters.length - 1) {
+                const nextChapterId = chapters[chapterIndex + 1].id;
+                nextBtn.classList.remove('disabled');
+                nextBtn.onclick = (e) => { e.preventDefault(); showView('viewer', nextChapterId); };
+            } else {
+                nextBtn.classList.add('disabled');
+                nextBtn.onclick = (e) => e.preventDefault();
+            }
+
+            // 4. Configurar Datos de Descarga
+            currentDownloadData = chapterData.download;
+        }
+
+
+        // --- FUNCIONALIDADES DEL MENÚ ---
+
+        // Autoscroll
+        function toggleAutoscroll() {
+            if (isScrolling) {
+                stopAutoscroll();
+            } else {
+                startAutoscroll();
+            }
+        }
+
+        function startAutoscroll() {
+            isScrolling = true;
+            btnAutoscroll.textContent = "⏸";
+            btnAutoscroll.classList.add('active');
+            // Velocidad variable simple (puedes ajustar el '15' para que sea más rápido o lento base)
+            scrollInterval = setInterval(() => {
+                window.scrollBy(0, scrollSpeed);
+            }, 15); 
+        }
+
+        function stopAutoscroll() {
+            isScrolling = false;
+            btnAutoscroll.textContent = "▶️";
+            btnAutoscroll.classList.remove('active');
+            clearInterval(scrollInterval);
+        }
+
+        btnAutoscroll.addEventListener('click', toggleAutoscroll);
+
+        // Control de velocidad con teclado (Flechas Arriba/Abajo)
+        document.addEventListener('keydown', (e) => {
+            if (!document.getElementById('viewer-section').classList.contains('hidden')) {
+                if (e.key === "ArrowUp") {
+                    scrollSpeed = Math.max(1, scrollSpeed - 1); // Mínimo 1
+                    console.log("Velocidad:", scrollSpeed);
+                } else if (e.key === "ArrowDown") {
+                    scrollSpeed = Math.min(10, scrollSpeed + 1); // Máximo 10 (ejemplo)
+                    console.log("Velocidad:", scrollSpeed);
+                } else if (e.key === " " || e.code === "Space") { // Barra espaciadora pausa
+                     e.preventDefault();
+                     toggleAutoscroll();
                 }
             }
         });
+
+        // Descargas (Abrir la sub-página/modal)
+        function toggleDownloadModal(show) {
+             if (show) {
+                 modalDownload.classList.remove('hidden');
+                 stopAutoscroll(); // Pausar si se abre el modal
+                 const linksContainer = document.getElementById('download-links-container');
+                 linksContainer.innerHTML = '';
+                 if (currentDownloadData) {
+                     // Crear un enlace de descarga real usando el Data URI
+                     const link = document.createElement('a');
+                     link.href = currentDownloadData.data;
+                     link.download = currentDownloadData.name; // Nombre del archivo al descargar
+                     link.className = 'download-link-item';
+                     link.innerHTML = `📥 Descargar archivo: ${currentDownloadData.name}`;
+                     linksContainer.appendChild(link);
+                 } else {
+                      linksContainer.innerHTML = '<p>No se subió ningún archivo de descarga para este capítulo.</p>';
+                 }
+
+             } else {
+                 modalDownload.classList.add('hidden');
+             }
+        }
+
+        btnDownload.addEventListener('click', () => toggleDownloadModal(true));
+
+        // Inicializar la app
+        loadData();
     </script>
 </body>
 </html>
